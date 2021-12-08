@@ -29,9 +29,6 @@ import java.util.Collection;
 
 @ExtendWith(MockitoExtension.class)
 public class TestInvalidUser {
-	/**
-	 * RELLENAR POR EL ALUMNO
-	 */
 
 	@InjectMocks
 	SystemManager systemManager;
