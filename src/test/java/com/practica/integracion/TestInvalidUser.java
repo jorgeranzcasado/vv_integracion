@@ -13,6 +13,7 @@ import static org.mockito.Mockito.inOrder;
 
 
 import com.practica.integracion.manager.SystemManagerException;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.junit.jupiter.api.Test;
@@ -46,12 +47,20 @@ public class TestInvalidUser {
 	private ArrayList<Object> lista = new ArrayList<>(Arrays.asList("uno", "dos"));
 	private ArrayList<Object> listaVacia = new ArrayList<>();
 
-	@Test
-	public void testStartRemoteSystemWithInValidUserAndValidSystem() throws Exception {
+	@BeforeEach
+	public void setUp() {
 
+		validSystemId="12345";
+		inValidSystemId = "54321";
+		inValidUser = new User("1","Ana","Lopez","Madrid", new ArrayList<Object>(Arrays.asList(1, 2)));
 		systemManager = new SystemManager(authDao, genericDao);
 
 		when(authDao.getAuthData(inValidUser.getId())).thenReturn(null);
+	}
+
+	@Test
+	public void testStartRemoteSystemWithInValidUserAndValidSystem() throws Exception {
+
 		when(genericDao.getSomeData(null, "where id=" + validSystemId)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
@@ -74,9 +83,7 @@ public class TestInvalidUser {
 	@Test
 	public void testStartRemoteSystemWithInValidUserAndInvalidSystem()
 			throws Exception {
-		systemManager = new SystemManager(authDao, genericDao);
 
-		when(authDao.getAuthData(inValidUser.getId())).thenReturn(null);
 		when(genericDao.getSomeData(null, "where id=" + inValidSystemId)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
@@ -99,9 +106,6 @@ public class TestInvalidUser {
 	@Test
 	public void testStopRemoteSystemWithInValidUserAndValidSystem() throws Exception {
 
-		systemManager = new SystemManager(authDao, genericDao);
-
-		when(authDao.getAuthData(inValidUser.getId())).thenReturn(null);
 		when(genericDao.getSomeData(null, "where id=" + validSystemId)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
@@ -122,9 +126,6 @@ public class TestInvalidUser {
 	@Test
 	public void testStopRemoteSystemWithInValidUserAndInValidSystem() throws Exception {
 
-		systemManager = new SystemManager(authDao, genericDao);
-
-		when(authDao.getAuthData(inValidUser.getId())).thenReturn(inValidUser);
 		when(genericDao.
 				getSomeData(
 						inValidUser,
@@ -133,25 +134,25 @@ public class TestInvalidUser {
 
 		ordered = inOrder(authDao, genericDao);
 
-		Collection<Object> retorno = new ArrayList<>();
-		try
-		{
-			retorno = systemManager.stopRemoteSystem(inValidUser.getId(), inValidSystemId);
-		}
-		catch (SystemManagerException e){
-			assertNotEquals(retorno.toString(), "[uno, dos]");
+		assertThrows(NullPointerException.class, () -> {
+			Collection<Object> retorno = null;
+			try
+			{
+				retorno = systemManager.stopRemoteSystem(inValidUser.getId(), inValidSystemId);
+			}
+			catch (SystemManagerException e){
+				e.printStackTrace();
+			}
+			System.out.print(retorno.toString());
+		});
 
-			ordered.verify(authDao).getAuthData(inValidUser.getId());
-			ordered.verify(genericDao).getSomeData(inValidUser, "where id=" + inValidSystemId);
-		}
+		ordered.verify(authDao).getAuthData(inValidUser.getId());
+		ordered.verify(genericDao).getSomeData(inValidUser, "where id=" + inValidSystemId);
 	}
 
 	@Test
 	public void testAddRemoteSystemWithInValidUserAndValidSystem() throws Exception {
 
-		systemManager = new SystemManager(authDao, genericDao);
-
-		when(authDao.getAuthData(inValidUser.getId())).thenReturn(null);
 		when(genericDao.updateSomeData(null, validSystemId)).thenReturn(false);
 
 		ordered = inOrder(authDao, genericDao);
@@ -170,9 +171,6 @@ public class TestInvalidUser {
 	@Test
 	public void testAddRemoteSystemWithInValidUserAndInValidSystem() throws Exception {
 
-		systemManager = new SystemManager(authDao, genericDao);
-
-		when(authDao.getAuthData(inValidUser.getId())).thenReturn(null);
 		when(genericDao.updateSomeData(null, inValidSystemId)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
@@ -191,37 +189,40 @@ public class TestInvalidUser {
 	@Test
 	public void testDeleteRemoteSystemWithInValidUserAndValidSystem() throws Exception {
 
-		systemManager = new SystemManager(authDao, genericDao);
+		when(genericDao.deleteSomeData(inValidUser, validSystemId)).
+				thenThrow(new OperationNotSupportedException());
 
-		//when(authDao.getAuthData(validUser.getId())).thenReturn(validUser);
-		when(genericDao.deleteSomeData(any(), anyString())).thenReturn(true);
+		ordered = inOrder(authDao, genericDao);
 
-		ordered = inOrder(genericDao);
-
-		systemManager.deleteRemoteSystem(inValidUser.getId(), validSystemId);
-
-		//No usa los parámetros correctos
-		ordered.verify(genericDao).deleteSomeData(any(), anyString());
+		try
+		{
+			systemManager.deleteRemoteSystem(inValidUser.getId(), validSystemId);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		ordered.verify(authDao).getAuthData(inValidUser.getId());
+		ordered.verify(genericDao).deleteSomeData(inValidUser, validSystemId);
 	}
 
 	@Test
 	public void testDeleteRemoteSystemWithInValidUserAndInValidSystem() throws Exception
 	{
-		systemManager = new SystemManager(authDao, genericDao);
+		when(genericDao.deleteSomeData(inValidUser, inValidSystemId)).
+				thenThrow(new OperationNotSupportedException());
 
-		//when(authDao.getAuthData(validUser.getId())).thenReturn(validUser);
-		when(genericDao.deleteSomeData(any(), anyString())).thenThrow(new OperationNotSupportedException());
+		ordered = inOrder(authDao, genericDao);
 
-		ordered = inOrder(genericDao);
 		try
 		{
 			systemManager.deleteRemoteSystem(inValidUser.getId(), inValidSystemId);
 		}
-		catch(SystemManagerException e)
+		catch(Exception e)
 		{
-			//No usa los parámetros correctos
-			ordered.verify(genericDao).deleteSomeData(any(), anyString());
-			//throw e;
+			e.printStackTrace();
 		}
+		ordered.verify(authDao).getAuthData(inValidUser.getId());
+		ordered.verify(genericDao).deleteSomeData(inValidUser, inValidSystemId);
 	}
 }
