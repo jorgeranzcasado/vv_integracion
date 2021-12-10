@@ -56,6 +56,13 @@ public class TestInvalidUser {
 		systemManager = new SystemManager(authDao, genericDao);
 
 		when(authDao.getAuthData(inValidUser.getId())).thenReturn(null);
+		/*
+		Suponemos que authDao.getAuthData(userId) devuelve nulo al darle un iD no válido, y que esto
+		levantará una excepción si se intenta usar con el id del sistema.
+		Los ordered.verify están dentro del catch porque solo se considerará que el test ha siudo satisfactorio
+		si ha habido una excepción.
+		 */
+
 	}
 
 	@Test
@@ -78,6 +85,7 @@ public class TestInvalidUser {
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
 			ordered.verify(genericDao).getSomeData(null, "where id=" + validSystemId);
 		}
+		//Funciona como se espera
 	}
 
 	@Test
@@ -101,6 +109,7 @@ public class TestInvalidUser {
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
 			ordered.verify(genericDao).getSomeData(null, "where id=" + inValidSystemId);
 		}
+		// En la práctica identico al anteior, pues se levanta el mismo tipo de excepción
 	}
 
 	@Test
@@ -123,18 +132,22 @@ public class TestInvalidUser {
 		}
 	}
 
+	/*
+	Igual que start con sistema válido
+	 */
+
 	@Test
 	public void testStopRemoteSystemWithInValidUserAndInValidSystem() throws Exception {
 
 		when(genericDao.
 				getSomeData(
-						inValidUser,
+						null,
 						"where id=" + inValidSystemId)).
 				thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
 
-		assertThrows(NullPointerException.class, () -> {
+		boolean lanzada = false;
 			Collection<Object> retorno = null;
 			try
 			{
@@ -142,13 +155,18 @@ public class TestInvalidUser {
 			}
 			catch (SystemManagerException e){
 				e.printStackTrace();
+				lanzada= true;
+				ordered.verify(authDao).getAuthData(inValidUser.getId());
+				ordered.verify(genericDao).getSomeData(null, "where id=" + inValidSystemId);
 			}
-			System.out.print(retorno.toString());
-		});
+		assertTrue(lanzada); //Si ha lanzado una excepción, todo ha ido bien
 
-		ordered.verify(authDao).getAuthData(inValidUser.getId());
-		ordered.verify(genericDao).getSomeData(inValidUser, "where id=" + inValidSystemId);
+
 	}
+
+	/*
+	Igual que start con sistema inválido
+	 */
 
 	@Test
 	public void testAddRemoteSystemWithInValidUserAndValidSystem() throws Exception {
@@ -163,6 +181,7 @@ public class TestInvalidUser {
 		}
 		catch (SystemManagerException e)
 		{
+			e.printStackTrace();
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
 			ordered.verify(genericDao).updateSomeData(null, validSystemId);
 		}
@@ -185,7 +204,7 @@ public class TestInvalidUser {
 			//throw e;
 		}
 	}
-
+//Los dos siguientes siguen sin pasar la prueba porque no realizan las llamadas correctas.
 	@Test
 	public void testDeleteRemoteSystemWithInValidUserAndValidSystem() throws Exception {
 
@@ -201,9 +220,9 @@ public class TestInvalidUser {
 		catch(Exception e)
 		{
 			e.printStackTrace();
+			ordered.verify(authDao).getAuthData(inValidUser.getId());
+			ordered.verify(genericDao).deleteSomeData(inValidUser, validSystemId);
 		}
-		ordered.verify(authDao).getAuthData(inValidUser.getId());
-		ordered.verify(genericDao).deleteSomeData(inValidUser, validSystemId);
 	}
 
 	@Test
@@ -221,8 +240,8 @@ public class TestInvalidUser {
 		catch(Exception e)
 		{
 			e.printStackTrace();
+			ordered.verify(authDao).getAuthData(inValidUser.getId());
+			ordered.verify(genericDao).deleteSomeData(inValidUser, inValidSystemId);
 		}
-		ordered.verify(authDao).getAuthData(inValidUser.getId());
-		ordered.verify(genericDao).deleteSomeData(inValidUser, inValidSystemId);
 	}
 }

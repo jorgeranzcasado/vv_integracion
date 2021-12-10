@@ -76,6 +76,9 @@ public class TestValidUser {
 
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).getSomeData(validUser, "where id=" + validSystemId);
+		//authDao devuelve el usuario bien
+		//genericDao devuelve la lista correcta
+		//Cumple lo esperado
 	}
 
 	@Test //Espero que salga mal, sale mal
@@ -98,6 +101,10 @@ public class TestValidUser {
 
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).getSomeData(validUser, "where id=" + inValidSystemId);
+
+		//authDao devuelve el usuario bien
+		//genericDao no puede devolver nada y debe lanzar una excepcion
+		//Cumple lo esperado
 	}
 
 	@Test //Espero que
@@ -113,6 +120,11 @@ public class TestValidUser {
 
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).getSomeData(validUser, "where id=" + validSystemId);
+		//authDao devuelve el usuario bien
+		//genericDao devuelve la misma lista que en start
+		//Esta función debería hacer algo distinto, tal vez devolver
+		//una lista vacía o realizar una acción no especificada
+		//Se precisa una documentación para hacer un juicio mas acertado
 	}
 
 	@Test
@@ -131,6 +143,10 @@ public class TestValidUser {
 
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).getSomeData(validUser, "where id=" + inValidSystemId);
+		/*
+		Como el anterior, intenta relizar las mismas acciones que start, pero al no tener un
+		systemId Valido, lanza una excepción que está bien manejada
+		 */
 	}
 
 	@Test
@@ -151,6 +167,9 @@ public class TestValidUser {
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).updateSomeData(validUser, validSystemId);
+		/*
+		Solo se comprueba que hace las llamadas sin tener excepciones porque no nos devuelve datos
+		 */
 	}
 
 	@Test
@@ -170,6 +189,9 @@ public class TestValidUser {
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).updateSomeData(validUser, inValidSystemId);
+		/*
+		Como el anterior, así que damos los detalles de la excepción, pero cumple lo esperado
+		 */
 	}
 
 	@Test
@@ -189,6 +211,9 @@ public class TestValidUser {
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).deleteSomeData(validUser, validSystemId);
+		/*
+		No llama a authDao, por eso no pasa la prueba
+		 */
 	}
 
 	@Test
@@ -207,7 +232,9 @@ public class TestValidUser {
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).deleteSomeData(validUser, inValidSystemId);
-
+		/*
+		No llama a Authdao y levanta una excepción al intentar usar un sistema inválido.
+		 */
 	}
 
 }
