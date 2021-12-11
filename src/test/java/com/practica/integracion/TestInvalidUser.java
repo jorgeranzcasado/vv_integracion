@@ -43,9 +43,8 @@ public class TestInvalidUser {
 	private String inValidSystemId = "54321";
 	private User inValidUser = new User("-1","Ana","Lopez","Madrid", new ArrayList<>());
 	private InOrder ordered;
-
-	private ArrayList<Object> lista = new ArrayList<>(Arrays.asList("uno", "dos"));
-	private ArrayList<Object> listaVacia = new ArrayList<>();
+	private Object validData;
+	private Object inValidData;
 
 	@BeforeEach
 	public void setUp() {
@@ -105,7 +104,6 @@ public class TestInvalidUser {
 		catch(SystemManagerException e)
 		{
 			assertNotEquals(retorno.toString(), "[uno, dos]");
-
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
 			ordered.verify(genericDao).getSomeData(null, "where id=" + inValidSystemId);
 		}
@@ -125,11 +123,11 @@ public class TestInvalidUser {
 		}
 		catch (SystemManagerException e)
 		{
-			assertNotEquals(retorno.toString(), "[uno, dos]");
-
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
 			ordered.verify(genericDao).getSomeData(null, "where id=" + validSystemId);
+			return;
 		}
+		fallarTest();
 	}
 
 	/*
@@ -138,30 +136,21 @@ public class TestInvalidUser {
 
 	@Test
 	public void testStopRemoteSystemWithInValidUserAndInValidSystem() throws Exception {
-
-		when(genericDao.
-				getSomeData(
-						null,
-						"where id=" + inValidSystemId)).
-				thenThrow(new OperationNotSupportedException());
+		when(genericDao.getSomeData(null, "where id=" + inValidSystemId)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
-
-		boolean lanzada = false;
-			Collection<Object> retorno = null;
-			try
-			{
-				retorno = systemManager.stopRemoteSystem(inValidUser.getId(), inValidSystemId);
-			}
-			catch (SystemManagerException e){
-				e.printStackTrace();
-				lanzada= true;
-				ordered.verify(authDao).getAuthData(inValidUser.getId());
-				ordered.verify(genericDao).getSomeData(null, "where id=" + inValidSystemId);
-			}
-		assertTrue(lanzada); //Si ha lanzado una excepción, todo ha ido bien
-
-
+		Collection<Object> retorno = new ArrayList<>();
+		try
+		{
+			retorno = systemManager.stopRemoteSystem(inValidUser.getId(), inValidSystemId);
+		}
+		catch (SystemManagerException e)
+		{
+			ordered.verify(authDao).getAuthData(inValidUser.getId());
+			ordered.verify(genericDao).getSomeData(null, "where id=" + inValidSystemId);
+			return;
+		}
+		fallarTest();
 	}
 
 	/*
@@ -169,79 +158,87 @@ public class TestInvalidUser {
 	 */
 
 	@Test
-	public void testAddRemoteSystemWithInValidUserAndValidSystem() throws Exception {
+	public void testAddRemoteSystemWithInValidUserAndValidData() throws Exception {
 
-		when(genericDao.updateSomeData(null, validSystemId)).thenReturn(false);
+		when(genericDao.updateSomeData(null, validData)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
 		try
 		{
-			systemManager.addRemoteSystem(inValidUser.getId(), validSystemId);
+			systemManager.addRemoteSystem(inValidUser.getId(), validData);
 
 		}
 		catch (SystemManagerException e)
 		{
 			e.printStackTrace();
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
-			ordered.verify(genericDao).updateSomeData(null, validSystemId);
+			ordered.verify(genericDao).updateSomeData(null, validData);
+			return;
 		}
+		fallarTest();
 	}
 
 	@Test
-	public void testAddRemoteSystemWithInValidUserAndInValidSystem() throws Exception {
-
-		when(genericDao.updateSomeData(null, inValidSystemId)).thenThrow(new OperationNotSupportedException());
+	public void testAddRemoteSystemWithInValidUserAndInValidData() throws Exception {
 
 		ordered = inOrder(authDao, genericDao);
 		try
 		{
-			systemManager.addRemoteSystem(inValidUser.getId(), inValidSystemId);
+			when(genericDao.updateSomeData(null, inValidData)).thenThrow(new OperationNotSupportedException());
+			systemManager.addRemoteSystem(inValidUser.getId(), inValidData);
 		}
-		catch(SystemManagerException e)
+		catch(Exception e)
 		{
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
-			ordered.verify(genericDao).updateSomeData(null, inValidSystemId);
-			//throw e;
+			ordered.verify(genericDao).updateSomeData(null, inValidData);
+			return;
 		}
+		fallarTest();
 	}
 //Los dos siguientes siguen sin pasar la prueba porque no realizan las llamadas correctas.
 	@Test
-	public void testDeleteRemoteSystemWithInValidUserAndValidSystem() throws Exception {
-
-		when(genericDao.deleteSomeData(inValidUser, validSystemId)).
-				thenThrow(new OperationNotSupportedException());
+	public void testDeleteRemoteSystemWithValidUserAndValidData() throws Exception {
 
 		ordered = inOrder(authDao, genericDao);
 
 		try
 		{
-			systemManager.deleteRemoteSystem(inValidUser.getId(), validSystemId);
+			when(genericDao.deleteSomeData(null, (String) validData)).thenThrow(new OperationNotSupportedException());
+			systemManager.deleteRemoteSystem(inValidUser.getId(), (String) validData);
 		}
 		catch(Exception e)
 		{
 			e.printStackTrace();
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
-			ordered.verify(genericDao).deleteSomeData(inValidUser, validSystemId);
+			ordered.verify(genericDao).deleteSomeData(null, (String) validData);
 		}
+		/*
+		No llama a authDao, por eso no pasa la prueba
+		 */
 	}
 
 	@Test
-	public void testDeleteRemoteSystemWithInValidUserAndInValidSystem() throws Exception
+	public void testDeleteRemoteSystemWithInValidUserAndInValidData() throws Exception
 	{
-		when(genericDao.deleteSomeData(inValidUser, inValidSystemId)).
-				thenThrow(new OperationNotSupportedException());
-
 		ordered = inOrder(authDao, genericDao);
 
 		try
 		{
-			systemManager.deleteRemoteSystem(inValidUser.getId(), inValidSystemId);
+			when(genericDao.deleteSomeData(null, (String)inValidData)).
+					thenThrow(new OperationNotSupportedException());
+			systemManager.deleteRemoteSystem(inValidUser.getId(), (String)inValidData);
 		}
 		catch(Exception e)
 		{
 			e.printStackTrace();
 			ordered.verify(authDao).getAuthData(inValidUser.getId());
-			ordered.verify(genericDao).deleteSomeData(inValidUser, inValidSystemId);
+			ordered.verify(genericDao).deleteSomeData(null, (String)inValidData);
+			return;
 		}
+		fallarTest();
+	}
+
+	private void fallarTest(){
+		assertFalse(true);
 	}
 }

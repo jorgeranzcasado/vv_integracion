@@ -50,6 +50,8 @@ public class TestValidUser {
 	private String inValidSystemId;
 	private User validUser;
 	private InOrder ordered;
+	private Object validData;
+	private Object inValidData;
 
 	private ArrayList<Object> lista = new ArrayList<>(Arrays.asList("uno", "dos"));
 
@@ -60,6 +62,8 @@ public class TestValidUser {
 		inValidSystemId = "54321";
 		validUser = new User("1","Ana","Lopez","Madrid", new ArrayList<Object>(Arrays.asList(1, 2)));
 		systemManager = new SystemManager(authDao, genericDao);
+		validData= new Object();
+		inValidData = null;
 
 		when(authDao.getAuthData(validUser.getId())).thenReturn(validUser);
 	}
@@ -117,7 +121,6 @@ public class TestValidUser {
 		Collection<Object> retorno = systemManager.stopRemoteSystem(validUser.getId(), validSystemId);
 
 		assertNotEquals(retorno.toString(), "[uno, dos]");
-
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).getSomeData(validUser, "where id=" + validSystemId);
 		//authDao devuelve el usuario bien
@@ -130,16 +133,19 @@ public class TestValidUser {
 	@Test
 	public void testStopRemoteSystemWithValidUserAndInValidSystem() throws Exception {
 
-		when(authDao.getAuthData(validUser.getId())).thenReturn(validUser);
-		when(genericDao.getSomeData(validUser, "where id=" + inValidSystemId)).thenReturn(null);
+		//when(authDao.getAuthData(validUser.getId())).thenReturn(validUser);
+		when(genericDao.getSomeData(validUser, "where id=" + inValidSystemId)).thenThrow(new OperationNotSupportedException());
 
 		ordered = inOrder(authDao, genericDao);
-
-		Collection<Object> retorno = systemManager.stopRemoteSystem(validUser.getId(), inValidSystemId);
-
-		assertThrows(NullPointerException.class, () -> {
-			retorno.toString();
-		});
+		Collection<Object> retorno=null;
+		try
+		{
+			retorno = systemManager.stopRemoteSystem(validUser.getId(), inValidSystemId);
+		}
+		catch(SystemManagerException e){
+			e.printStackTrace();
+		}
+		assertNotEquals(retorno, lista);
 
 		ordered.verify(authDao).getAuthData(validUser.getId());
 		ordered.verify(genericDao).getSomeData(validUser, "where id=" + inValidSystemId);
@@ -150,15 +156,15 @@ public class TestValidUser {
 	}
 
 	@Test
-	public void testAddRemoteSystemWithValidUserAndSystem() throws OperationNotSupportedException {
+	public void testAddRemoteSystemWithValidUserAndData() throws OperationNotSupportedException {
 
-		when(genericDao.updateSomeData(validUser, validSystemId)).thenReturn(true);
+		when(genericDao.updateSomeData(validUser, validData)).thenReturn(true);
 
 		ordered = inOrder(authDao, genericDao);
 
 		try
 		{
-			systemManager.addRemoteSystem(validUser.getId(), validSystemId);
+			systemManager.addRemoteSystem(validUser.getId(), validData);
 
 		}
 		catch(SystemManagerException e)
@@ -166,58 +172,56 @@ public class TestValidUser {
 			e.printStackTrace();
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
-		ordered.verify(genericDao).updateSomeData(validUser, validSystemId);
+		ordered.verify(genericDao).updateSomeData(validUser, validData);
 		/*
 		Solo se comprueba que hace las llamadas sin tener excepciones porque no nos devuelve datos
 		 */
 	}
 
 	@Test
-	public void testAddRemoteSystemWithValidUserAndInValidSystem() throws Exception {
-
-		when(genericDao.updateSomeData(validUser, inValidSystemId)).thenThrow(new OperationNotSupportedException());
+	public void testAddRemoteSystemWithValidUserAndInValidData() throws Exception {
 
 		ordered = inOrder(authDao, genericDao);
 
 		try
 		{
-			systemManager.addRemoteSystem(validUser.getId(), inValidSystemId);
+			when(genericDao.updateSomeData(validUser, inValidData)).thenReturn(false);
+			systemManager.addRemoteSystem(validUser.getId(), inValidData);
 		}
 		catch(SystemManagerException e)
 		{
 			e.printStackTrace();
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
-		ordered.verify(genericDao).updateSomeData(validUser, inValidSystemId);
+		ordered.verify(genericDao).updateSomeData(validUser, inValidData);
 		/*
 		Como el anterior, así que damos los detalles de la excepción, pero cumple lo esperado
 		 */
 	}
 
 	@Test
-	public void testDeleteRemoteSystemWithValidUserAndValidSystem() throws Exception {
-
-		when(genericDao.deleteSomeData(validUser, validSystemId)).thenReturn(true);
+	public void testDeleteRemoteSystemWithValidUserAndValidData() throws Exception {
 
 		ordered = inOrder(authDao, genericDao);
 
 		try
 		{
-			systemManager.deleteRemoteSystem(validUser.getId(), validSystemId);
+			when(genericDao.deleteSomeData(validUser, (String) validData)).thenReturn(true);
+			systemManager.deleteRemoteSystem(validUser.getId(), (String) validData);
 		}
 		catch(Exception e)
 		{
 			e.printStackTrace();
 		}
 		ordered.verify(authDao).getAuthData(validUser.getId());
-		ordered.verify(genericDao).deleteSomeData(validUser, validSystemId);
+		ordered.verify(genericDao).deleteSomeData(validUser, (String) validData);
 		/*
 		No llama a authDao, por eso no pasa la prueba
 		 */
 	}
 
 	@Test
-	public void testDeleteRemoteSystemWithValidUserAndInValidSystem() throws Exception {
+	public void testDeleteRemoteSystemWithValidUserAndInValidData() throws Exception {
 
 		when(genericDao.deleteSomeData(validUser, inValidSystemId)).thenThrow(new OperationNotSupportedException());
 
